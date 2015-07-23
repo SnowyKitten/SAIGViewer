@@ -54,7 +54,6 @@ class MyStaticMplCanvas(MyMplCanvas):
                        xcur = 1.2,
                        fignum = 1,
                        cmap = 'RdGy',
-                       aspect = 2,
                        vmin = -1,
                        vmax = 1,
                        title = " ",
@@ -74,14 +73,25 @@ class MyStaticMplCanvas(MyMplCanvas):
         if file_name == "":
             self.axes.plot()
         else:
+
             d = dr.read_data(file_name)
+            h, w = len(d), len(d[0])
+            if h > w:
+                aspect = (5/(h/w))
+            elif w > h:
+                aspect = (5/(w/h))
+                
             if style == 'color':
                 self.axes.imshow(d, cmap=cmap, vmin=vmin, vmax=vmax,
                                  extent=[ox, ox+len(d[0])*dx, oy+len(d)*dy, oy],
-                                 aspect=aspect)
+                                 aspect=aspect,
+                                 interpolation=interpolation)
                 self.draw()
+                # returns the height and width of the data matrix
+                return len(d), len(d[0])
+            
             else:
-                # plot wiggle here
+                # plot wiggle here if desired
                 return
 
             
@@ -91,6 +101,34 @@ class MyStaticMplCanvas(MyMplCanvas):
 
 class ApplicationWindow(QtGui.QMainWindow):
     def __init__(self):
+        self.old_xlim = 0
+        self.old_ylim = 0
+        self.data_dim = 0,0
+        self.style = 'color' 
+        self.wiggle_fill_color = 'k'
+        self.wiggle_line_color = 'k'
+        self.wiggle_trace_increment = 1
+        self.xcur = 1.2
+        self.fignum = 1
+        self.cmap = 'RdGy'
+        self.vmin = -1
+        self.vmax = 1
+        self.title = " "
+        self.xlabel = " "
+        self.xunits = " "
+        self.ylabel = " "
+        self.yunits = " "
+        self.ox = 0
+        self.dx = 1
+        self.oy = 0
+        self.dy = 1
+        self.dpi = 100
+        self.wbox = 8
+        self.hbox = 8
+        self.name = None
+        self.interpolation = "none"        
+        
+        
         QtGui.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("application main window")
@@ -109,25 +147,44 @@ class ApplicationWindow(QtGui.QMainWindow):
 
         self.main_widget = QtGui.QWidget(self)
 
+        # create widow layout
         l = QtGui.QGridLayout(self.main_widget)
+        
+        # create an initial image canvas 
         self.sc = MyStaticMplCanvas(self.main_widget, width=4, height=4, dpi=100)
         
-        y_sld = QtGui.QSlider(QtCore.Qt.Vertical, self)
-        y_sld.setFocusPolicy(QtCore.Qt.NoFocus)
-        y_sld.valueChanged[int].connect(self.yChangeValue)
-        
-        x_sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
-        x_sld.setFocusPolicy(QtCore.Qt.NoFocus)
-        x_sld.valueChanged[int].connect(self.xChangeValue)       
-
         
         
+        # create the x-axis pan slider
+        self.x_sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.x_sld.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.x_sld.valueChanged[int].connect(self.xChangeValue)   
+        self.x_sld.setTickPosition(1)
+        self.x_sld.setMinimum(0)
+        self.x_sld.setMaximum(20)
+        self.x_sld.setTickInterval(1)
+        self.x_sld.setRange(0,20)
+        self.x_sld.setValue(10)
+        
+        # create the y-axis pan slider
+        self.y_sld = QtGui.QSlider(QtCore.Qt.Vertical, self)
+        self.y_sld.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.y_sld.valueChanged[int].connect(self.yChangeValue)
+        self.y_sld.setTickPosition(2)
+        self.y_sld.setMinimum(0)
+        self.y_sld.setMaximum(20)
+        self.y_sld.setTickInterval(1)
+        self.y_sld.setRange(0,20)         
+        self.y_sld.setValue(10)   
+        
+        # call the default mpl toolbar
         self.mpl_toolbar = NavigationToolbar(self.sc, self.main_widget)
         self.sc.mpl_connect('key_press_event', self.on_key_press)
 
-        l.addWidget(y_sld, 0, 0)
+        # add the separate widgets into the display
+        l.addWidget(self.y_sld, 0, 0)
         l.addWidget(self.sc, 0, 1)
-        l.addWidget(x_sld, 1, 1)
+        l.addWidget(self.x_sld, 1, 1)
         l.addWidget(self.mpl_toolbar, 2, 1)        
         
 
@@ -135,9 +192,26 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         
     def xChangeValue(self, value):
+        modifier = value - self.old_xlim
+        self.old_xlim = value
+        # get height and width of data matrix
+        ht, wt = self.data_dim[0], self.data_dim[1]
+        tickwt = wt/20
+        old_min, old_max = self.sc.axes.get_xlim()
+        self.sc.axes.set_xlim([old_min+(tickwt*modifier),old_max+(tickwt*modifier)])
+        self.sc.draw()
+        
         return
     
     def yChangeValue(self, value):
+        modifier = value - self.old_ylim
+        self.old_ylim = value
+        # get height and width of data matrix
+        ht, wt = self.data_dim[0], self.data_dim[1]
+        tickht = ht/20
+        old_min, old_max = self.sc.axes.get_ylim()
+        self.sc.axes.set_ylim([old_min+(-1*tickht*modifier),old_max+(-1*tickht*modifier)])
+        self.sc.draw()        
         return    
 
     def on_key_press(self, event):
@@ -153,7 +227,9 @@ class ApplicationWindow(QtGui.QMainWindow):
         
     def openFile(self):
         path = QtGui.QFileDialog.getOpenFileName()
-        self.sc.compute_figure(file_name = path)
+        self.data_dim = self.sc.compute_figure(file_name = path)
+        self.x_sld.setValue(10)
+        self.y_sld.setValue(10)        
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
