@@ -1,15 +1,5 @@
-#!/usr/bin/env python
-
-# embedding_in_qt4.py --- Simple Qt4 application embedding matplotlib canvases
-#
-# Copyright (C) 2005 Florent Rougon
-#               2006 Darren Dale
-#
-# This file is an example program for matplotlib. It may be used and
-# modified with no restriction; raw copies as well as modified versions
-# may be distributed without limitation.
-
 from __future__ import unicode_literals
+from DataReader import DataReader
 import sys
 import os
 import random
@@ -20,12 +10,14 @@ if use_pyside:
 else:
     from PyQt4 import QtGui, QtCore
 
+import numpy as np
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-progname = os.path.basename(sys.argv[0])
-progversion = "0.1"
+progname = "SAIGViewer WIP"
+#os.path.basename(sys.argv[0])
+progversion = "0.01"
 
 
 class MyMplCanvas(FigureCanvas):
@@ -36,7 +28,7 @@ class MyMplCanvas(FigureCanvas):
         # We want the axes cleared every time plot() is called
         self.axes.hold(False)
 
-        self.compute_initial_figure()
+        self.compute_figure()
 
         #
         FigureCanvas.__init__(self, fig)
@@ -47,15 +39,20 @@ class MyMplCanvas(FigureCanvas):
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-    def compute_initial_figure(self):
+    def compute_figure(self):
         pass
 
 
 class MyStaticMplCanvas(MyMplCanvas):
-    def compute_initial_figure(self):
-        d = [[0.1,0.1],[0.2,0.1]]
-        self.axes.imshow(d)
-
+    def compute_figure(self,file_name=""):
+        if file_name == "":
+            self.axes.plot()
+        else:
+            d = dr.read_data(file_name)
+            self.axes.imshow(d)
+            self.draw()
+            
+    #def update_figure(
 
 
 class ApplicationWindow(QtGui.QMainWindow):
@@ -65,50 +62,52 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.setWindowTitle("application main window")
 
         self.file_menu = QtGui.QMenu('&File', self)
+        
+        self.file_menu.addAction('&Open File...', self.openFile, QtCore.Qt.CTRL + QtCore.Qt.Key_O)
+
+        self.file_menu.addAction('&About', self.about, QtCore.Qt.CTRL + QtCore.Qt.Key_A)     
+        
         self.file_menu.addAction('&Quit', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
+        
+
         self.menuBar().addMenu(self.file_menu)
 
-        self.help_menu = QtGui.QMenu('&Help', self)
-        self.menuBar().addSeparator()
-        self.menuBar().addMenu(self.help_menu)
-
-        self.help_menu.addAction('&About', self.about)
 
         self.main_widget = QtGui.QWidget(self)
 
         l = QtGui.QVBoxLayout(self.main_widget)
-        sc = MyStaticMplCanvas(self.main_widget, width=5, height=4, dpi=100)
-        l.addWidget(sc)
+        self.sc = MyStaticMplCanvas(self.main_widget, width=5, height=4, dpi=100)
+        l.addWidget(self.sc)
 
         self.main_widget.setFocus()
         self.setCentralWidget(self.main_widget)
 
-        self.statusBar().showMessage("All hail matplotlib!", 2000)
 
     def fileQuit(self):
         self.close()
 
     def closeEvent(self, ce):
         self.fileQuit()
+        
+    def openFile(self):
+        path = QtGui.QFileDialog.getOpenFileName()
+        self.sc.compute_figure(path)    
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
-"""embedding_in_qt4.py example
-Copyright 2005 Florent Rougon, 2006 Darren Dale
+"""
+Simple Plot Viewer built for SAIG (Signal Analysis and Imaging Group) at the University of Alberta
 
-This program is a simple example of a Qt4 application embedding matplotlib
-canvases.
-
-It may be used and modified with no restriction; raw copies as well as
-modified versions may be distributed without limitation."""
+Developer: Randy Wong
+"""
 )
 
-
+dr = DataReader()
 qApp = QtGui.QApplication(sys.argv)
 
 aw = ApplicationWindow()
 aw.setWindowTitle("%s" % progname)
 aw.show()
-sys.exit(qApp.exec_())
+#sys.exit(qApp.exec_())
 #qApp.exec_()
