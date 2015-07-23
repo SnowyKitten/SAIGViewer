@@ -97,6 +97,7 @@ class MyStaticMplCanvas(MyMplCanvas):
 
 class ApplicationWindow(QtGui.QMainWindow):
     def __init__(self):
+        self.path = ""
         self.old_xlim = 0
         self.old_ylim = 0
         self.data_dim = 0,0
@@ -139,6 +140,14 @@ class ApplicationWindow(QtGui.QMainWindow):
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
         
         self.menuBar().addMenu(self.file_menu)
+        
+        
+        self.colour_menu = QtGui.QMenu('&Colour Map', self)
+        self.colour_menu.addAction('&RdGy', self.setRdGy)
+        self.colour_menu.addAction('&Seismic', self.setRGB)
+
+        
+        self.menuBar().addMenu(self.colour_menu)
 
 
         self.main_widget = QtGui.QWidget(self)
@@ -152,12 +161,7 @@ class ApplicationWindow(QtGui.QMainWindow):
         # create a zoom dialog button
         self.zbtn = QtGui.QPushButton('Zoom', self)
         self.zbtn.clicked.connect(self.zoomDialog)
-                
-        
-        # color dialog
-        self.cbtn = QtGui.QPushButton('Colour Map', self)
-        self.cbtn.clicked.connect(self.colourDialog)        
-
+                    
         
         # create the x-axis pan slider
         self.x_sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
@@ -191,7 +195,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         l.addWidget(self.x_sld, 1, 1)
         l.addWidget(self.mpl_toolbar, 2, 1)      
         l.addWidget(self.zbtn, 2,2)
-        l.addWidget(self.cbtn, 3,2)
         
 
         self.main_widget.setFocus()
@@ -215,10 +218,7 @@ class ApplicationWindow(QtGui.QMainWindow):
                 print("Incorrect Input")
 
  
-    
-    
-    def colourDialog(self):
-        return    
+      
     
     def xChangeValue(self, value):
         modifier = value - self.old_xlim
@@ -248,6 +248,20 @@ class ApplicationWindow(QtGui.QMainWindow):
         #implement something here
         key_press_handler(event, self.sc, self.mpl_toolbar)
 
+
+    def setRGB(self):
+        self.sc.cmap = 'seismic'
+        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = 'seismic')
+        self.x_sld.setValue(50)
+        self.y_sld.setValue(50)            
+        
+    def setRdGy(self):
+        self.sc.cmap = 'RdGy'
+        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = 'RdGy')
+        self.x_sld.setValue(50)
+        self.y_sld.setValue(50)            
+
+
     def fileQuit(self):
         self.close()
 
@@ -255,8 +269,8 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.fileQuit()
         
     def openFile(self):
-        path = QtGui.QFileDialog.getOpenFileName()
-        self.data_dim = self.sc.compute_figure(file_name = path)
+        self.path = QtGui.QFileDialog.getOpenFileName()
+        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
         self.x_sld.setValue(50)
         self.y_sld.setValue(50)        
 
