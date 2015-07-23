@@ -94,10 +94,6 @@ class MyStaticMplCanvas(MyMplCanvas):
                 # plot wiggle here if desired
                 return
 
-            
-
-
-        
 
 class ApplicationWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -153,7 +149,15 @@ class ApplicationWindow(QtGui.QMainWindow):
         # create an initial image canvas 
         self.sc = MyStaticMplCanvas(self.main_widget, width=4, height=4, dpi=100)
         
+        # create a zoom dialog button
+        self.zbtn = QtGui.QPushButton('Zoom', self)
+        self.zbtn.clicked.connect(self.zoomDialog)
+                
         
+        # color dialog
+        self.cbtn = QtGui.QPushButton('Colour Map', self)
+        self.cbtn.clicked.connect(self.colourDialog)        
+
         
         # create the x-axis pan slider
         self.x_sld = QtGui.QSlider(QtCore.Qt.Horizontal, self)
@@ -161,10 +165,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.x_sld.valueChanged[int].connect(self.xChangeValue)   
         self.x_sld.setTickPosition(1)
         self.x_sld.setMinimum(0)
-        self.x_sld.setMaximum(20)
-        self.x_sld.setTickInterval(1)
-        self.x_sld.setRange(0,20)
-        self.x_sld.setValue(10)
+        self.x_sld.setMaximum(100)
+        self.x_sld.setTickInterval(4)
+        self.x_sld.setRange(0,100)
+        self.x_sld.setValue(50)
         
         # create the y-axis pan slider
         self.y_sld = QtGui.QSlider(QtCore.Qt.Vertical, self)
@@ -172,10 +176,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.valueChanged[int].connect(self.yChangeValue)
         self.y_sld.setTickPosition(2)
         self.y_sld.setMinimum(0)
-        self.y_sld.setMaximum(20)
-        self.y_sld.setTickInterval(1)
-        self.y_sld.setRange(0,20)         
-        self.y_sld.setValue(10)   
+        self.y_sld.setMaximum(100)
+        self.y_sld.setTickInterval(4)
+        self.y_sld.setRange(0,100)         
+        self.y_sld.setValue(50)   
         
         # call the default mpl toolbar
         self.mpl_toolbar = NavigationToolbar(self.sc, self.main_widget)
@@ -185,18 +189,43 @@ class ApplicationWindow(QtGui.QMainWindow):
         l.addWidget(self.y_sld, 0, 0)
         l.addWidget(self.sc, 0, 1)
         l.addWidget(self.x_sld, 1, 1)
-        l.addWidget(self.mpl_toolbar, 2, 1)        
+        l.addWidget(self.mpl_toolbar, 2, 1)      
+        l.addWidget(self.zbtn, 2,2)
+        l.addWidget(self.cbtn, 3,2)
         
 
         self.main_widget.setFocus()
         self.setCentralWidget(self.main_widget)
         
+        
+    def zoomDialog(self):
+        text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to Xmin, Xmax, Ymin, Ymax')
+        if ok:
+            try:
+                dim = text.strip().split(',')
+
+                # set slider bars to approximately the correct location given a zoom
+                self.y_sld.setValue((self.data_dim[0]//int(dim[3]))*100)
+                self.x_sld.setValue((int(dim[0])//self.data_dim[1])*100)
+            
+                self.sc.axes.set_xlim(int(dim[0]), int(dim[1]))
+                self.sc.axes.set_ylim(int(dim[3]), int(dim[2]))
+                self.sc.draw()   
+            except:
+                print("Incorrect Input")
+
+ 
+    
+    
+    def colourDialog(self):
+        return    
+    
     def xChangeValue(self, value):
         modifier = value - self.old_xlim
         self.old_xlim = value
         # get height and width of data matrix
         ht, wt = self.data_dim[0], self.data_dim[1]
-        tickwt = wt/20
+        tickwt = wt/100
         old_min, old_max = self.sc.axes.get_xlim()
         self.sc.axes.set_xlim([old_min+(tickwt*modifier),old_max+(tickwt*modifier)])
         self.sc.draw()
@@ -208,7 +237,7 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.old_ylim = value
         # get height and width of data matrix
         ht, wt = self.data_dim[0], self.data_dim[1]
-        tickht = ht/20
+        tickht = ht/100
         old_min, old_max = self.sc.axes.get_ylim()
         self.sc.axes.set_ylim([old_min+(-1*tickht*modifier),old_max+(-1*tickht*modifier)])
         self.sc.draw()        
@@ -228,8 +257,8 @@ class ApplicationWindow(QtGui.QMainWindow):
     def openFile(self):
         path = QtGui.QFileDialog.getOpenFileName()
         self.data_dim = self.sc.compute_figure(file_name = path)
-        self.x_sld.setValue(10)
-        self.y_sld.setValue(10)        
+        self.x_sld.setValue(50)
+        self.y_sld.setValue(50)        
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
