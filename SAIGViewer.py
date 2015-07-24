@@ -3,8 +3,8 @@ from DataReader import DataReader
 import sys
 import os
 import random
-from matplotlib.backends import qt4_compat
-use_pyside = qt4_compat.QT_API == qt4_compat.QT_API_PYSIDE
+from matplotlib.backends import qt_compat
+use_pyside = qt_compat.QT_API == qt_compat.QT_API_PYSIDE
 if use_pyside:
     from PySide import QtGui, QtCore
 else:
@@ -144,7 +144,8 @@ class ApplicationWindow(QtGui.QMainWindow):
         
         self.colour_menu = QtGui.QMenu('&Colour Map', self)
         self.colour_menu.addAction('&RdGy', self.setRdGy)
-        self.colour_menu.addAction('&Seismic', self.setRGB)
+        self.colour_menu.addAction('&Seismic', self.setSeismic)
+        self.colour_menu.addAction('&Enter a cmap' , self.setCustom)
 
         
         self.menuBar().addMenu(self.colour_menu)
@@ -215,7 +216,7 @@ class ApplicationWindow(QtGui.QMainWindow):
                 self.sc.axes.set_ylim(int(dim[3]), int(dim[2]))
                 self.sc.draw()   
             except:
-                print("Incorrect Input")
+                return
 
  
       
@@ -244,20 +245,26 @@ class ApplicationWindow(QtGui.QMainWindow):
         return    
 
     def on_key_press(self, event):
-        print('you pressed', event.key)
         #implement something here
         key_press_handler(event, self.sc, self.mpl_toolbar)
 
 
-    def setRGB(self):
+    def setCustom(self):
+        self.sc.cmap, ok = QtGui.QInputDialog.getText(self, 'Set Cmap', 'Cmap')
+        self.sc.compute_figure(file_name = self.path, cmap = self.sc.cmap)
+        self.x_sld.setValue(50)
+        self.y_sld.setValue(50)  
+        
+
+    def setSeismic(self):
         self.sc.cmap = 'seismic'
-        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = 'seismic')
+        self.sc.compute_figure(file_name = self.path, cmap = self.sc.cmap)
         self.x_sld.setValue(50)
         self.y_sld.setValue(50)            
         
     def setRdGy(self):
         self.sc.cmap = 'RdGy'
-        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = 'RdGy')
+        self.sc.compute_figure(file_name = self.path, cmap = self.sc.cmap)
         self.x_sld.setValue(50)
         self.y_sld.setValue(50)            
 
@@ -288,5 +295,5 @@ qApp = QtGui.QApplication(sys.argv)
 aw = ApplicationWindow()
 aw.setWindowTitle("%s" % progname)
 aw.show()
-#sys.exit(qApp.exec_())
+sys.exit(qApp.exec_())
 #qApp.exec_()
