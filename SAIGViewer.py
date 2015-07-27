@@ -274,14 +274,7 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.misccmap_menu.addAction('&flag', lambda: self.setCmap('flag'))
         self.misccmap_menu.addAction('&prism', lambda: self.setCmap('prism'))
         
-        
-        
-        
 
-        
-        
-        
-        #self.colour_menu.addAction('&RdGy', lambda: self.setCmap('somedata'))
         self.colour_menu.addAction('&Enter a cmap' , self.setCustom)
 
         
@@ -349,9 +342,10 @@ class ApplicationWindow(QtGui.QMainWindow):
 
     def setCmap(self, cmap):
         self.cmap = cmap
-        self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
         self.x_sld.setValue(50)
-        self.y_sld.setValue(50)                     
+        self.y_sld.setValue(50)          
+        self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+                   
 
 
     def fileQuit(self):
@@ -362,9 +356,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         
     def openFile(self):
         self.path = QtGui.QFileDialog.getOpenFileName()
-        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
         self.x_sld.setValue(50)
-        self.y_sld.setValue(50)        
+        self.y_sld.setValue(50)           
+        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+     
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
