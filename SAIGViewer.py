@@ -355,7 +355,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.setValue(0) 
         
         self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
-        self.window_dim = self.data_dim
         self.x_sld_max = self.data_dim[0]
         self.y_sld_max = self.data_dim[1]
         
