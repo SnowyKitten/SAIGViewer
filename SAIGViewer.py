@@ -321,26 +321,30 @@ class ApplicationWindow(QtGui.QMainWindow):
             
     # called by the x slider when it is moved
     def xChangeValue(self, value):
-        # modifier = how many ticks are moved at a time
-        modifier = value - self.old_xlim
-        self.old_xlim = value
-        old_min, old_max = self.sc.axes.get_xlim()
-        # move the window accordingly
-        self.sc.axes.set_xlim([old_min+(modifier),old_max+(modifier)])
-        self.sc.draw()
-        
-        return
+        try:
+            # modifier = how many ticks are moved at a time
+            modifier = value - self.old_xlim
+            self.old_xlim = value
+            old_min, old_max = self.sc.axes.get_xlim()
+            # move the window accordingly
+            self.sc.axes.set_xlim([old_min+(modifier),old_max+(modifier)])
+            self.sc.draw()
+        except:
+            return
     
     # called by the y slider when it is moved
     def yChangeValue(self, value):
-        # modifier = how many ticks are moved at a time        
-        modifier = value - self.old_ylim
-        self.old_ylim = value
-        old_min, old_max = self.sc.axes.get_ylim()
-        # move the window accordingly        
-        self.sc.axes.set_ylim([old_min+(-1*modifier),old_max+(-1*modifier)])
-        self.sc.draw()        
-        return    
+        try:
+            # modifier = how many ticks are moved at a time        
+            modifier = value - self.old_ylim
+            self.old_ylim = value
+            old_min, old_max = self.sc.axes.get_ylim()
+            # move the window accordingly        
+            self.sc.axes.set_ylim([old_min+(-1*modifier),old_max+(-1*modifier)])
+            self.sc.draw()        
+            return
+        except:
+            return
 
 
     def on_key_press(self, event):
@@ -349,17 +353,22 @@ class ApplicationWindow(QtGui.QMainWindow):
 
     # called by the self entered cmap option, sets the cmap to whatever is entered
     def setCustom(self):
-        self.cmap, ok = QtGui.QInputDialog.getText(self, 'Set Cmap', 'Cmap')
-        self.setCmap(self.cmap)
+        try:
+            self.cmap, ok = QtGui.QInputDialog.getText(self, 'Set Cmap', 'Cmap')
+            self.setCmap(self.cmap)
+        except:
+            return
         
     # called by menu options and setCustom, sets cmap and redraws the plot 
     def setCmap(self, cmap):
-        self.cmap = cmap         
-        self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
-        self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
-        self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
-        self.sc.draw()
-                   
+        try:
+            self.cmap = cmap         
+            self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+            self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
+            self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
+            self.sc.draw()
+        except:
+            return
 
 
     def fileQuit(self):
@@ -370,17 +379,19 @@ class ApplicationWindow(QtGui.QMainWindow):
         
     # opens file, shows entire plot, sets sliders to not being able to move
     def openFile(self):
-        self.path = QtGui.QFileDialog.getOpenFileName()
-        
-        self.x_sld.setMaximum(0)        
-        self.y_sld.setMaximum(0)
-        self.x_sld.setValue(0)
-        self.y_sld.setValue(0) 
-        
-        self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
-        self.x_sld_max = self.data_dim[0]
-        self.y_sld_max = self.data_dim[1]
-        
+        try:
+            self.path = QtGui.QFileDialog.getOpenFileName()
+            
+            self.x_sld.setMaximum(0)        
+            self.y_sld.setMaximum(0)
+            self.x_sld.setValue(0)
+            self.y_sld.setValue(0) 
+            
+            self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+            self.x_sld_max = self.data_dim[0]
+            self.y_sld_max = self.data_dim[1]
+        except:
+            return
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
