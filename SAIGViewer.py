@@ -45,6 +45,7 @@ class MyMplCanvas(FigureCanvas):
         pass
 
 
+# allow attributes to be taken incase in the future we need them
 class MyStaticMplCanvas(MyMplCanvas):
     def compute_figure(self,file_name="", 
                        style = 'color', 
@@ -70,18 +71,23 @@ class MyStaticMplCanvas(MyMplCanvas):
                        hbox = 8,
                        name = None,
                        interpolation = "none"):
+        # if first startup, draw an empty plot
         if file_name == "":
             self.axes.plot()
         else:
-
+            # read the .seisd file
             d = dr.read_data(file_name)
+            # get the dimensions of the data to help set aspect ratio
+            # approximately make it 5:1 in whichever way works better
             h, w = len(d), len(d[0])
             if h > w:
                 aspect = (5/(h/w))
             elif w > h:
                 aspect = (5/(w/h))
                 
+            # can enter style later maybe? colour vs wiggle
             if style == 'color':
+                # options if needed, otherwise they default to the presets from before
                 self.axes.imshow(d, cmap=cmap, vmin=vmin, vmax=vmax,
                                  extent=[ox, ox+len(d[0])*dx, oy+len(d)*dy, oy],
                                  aspect=aspect,
@@ -168,7 +174,9 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.setRange(0,self.y_sld_max)         
         self.y_sld.setValue(self.y_sld_max//2)   
         
-        # call the default mpl toolbar
+        #--------------------------------------------------#
+        # call the default mpl toolbar, planning to remove #
+        #--------------------------------------------------#
         self.mpl_toolbar = NavigationToolbar(self.sc, self.main_widget)
         self.sc.mpl_connect('key_press_event', self.on_key_press)
 
@@ -180,6 +188,7 @@ class ApplicationWindow(QtGui.QMainWindow):
         l.addWidget(self.zbtn, 2,2)
         
         
+        # add all the menu options
         self.file_menu = QtGui.QMenu('&File', self)
         
         self.file_menu.addAction('&Open File...', self.openFile, QtCore.Qt.CTRL + QtCore.Qt.Key_O)
@@ -287,50 +296,63 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         
         
+    # opens a dialog window where you type ints [a,b,c,d] with the commas to give
+    # Xmin, Xmax, Ymin, and Ymax of the zoomed window
     def zoomDialog(self):
+        
         text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to [Xmin, Xmax, Ymin, Ymax]')
         if ok:
-            self.window_dim = text.strip().split(',')
-            self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
-            self.y_sld.setMaximum(self.data_dim[1] - (int(self.window_dim[3]) - int(self.window_dim[2])))               
+            try:
+                self.window_dim = text.strip().split(',')
+                # change the slider bars so that you can move the slider, but not past the edges
+                self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
+                self.y_sld.setMaximum(self.data_dim[1] - (int(self.window_dim[3]) - int(self.window_dim[2])))               
                 
-            # set slider bars to approximately the correct location given a zoom            
-            self.y_sld.setValue(self.y_sld_max - int(self.window_dim[3]))
-            self.x_sld.setValue(int(self.window_dim[0]))
+                # set slider bars to approximately the correct location given a zoom            
+                self.y_sld.setValue(self.y_sld_max - int(self.window_dim[3]))
+                self.x_sld.setValue(int(self.window_dim[0]))
             
-            self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
-            self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
-            self.sc.draw()   
-    
+                self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
+                self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
+                self.sc.draw()
+            except:
+                # no real exception handling, just do nothing
+                return
+            
+    # called by the x slider when it is moved
     def xChangeValue(self, value):
+        # modifier = how many ticks are moved at a time
         modifier = value - self.old_xlim
         self.old_xlim = value
-        # get height and width of data matrix
         old_min, old_max = self.sc.axes.get_xlim()
+        # move the window accordingly
         self.sc.axes.set_xlim([old_min+(modifier),old_max+(modifier)])
         self.sc.draw()
         
         return
     
+    # called by the y slider when it is moved
     def yChangeValue(self, value):
+        # modifier = how many ticks are moved at a time        
         modifier = value - self.old_ylim
         self.old_ylim = value
-        # get height and width of data matrix
         old_min, old_max = self.sc.axes.get_ylim()
+        # move the window accordingly        
         self.sc.axes.set_ylim([old_min+(-1*modifier),old_max+(-1*modifier)])
         self.sc.draw()        
         return    
 
+
     def on_key_press(self, event):
-        #implement something here
+        #implement something here if desired
         key_press_handler(event, self.sc, self.mpl_toolbar)
 
-
+    # called by the self entered cmap option, sets the cmap to whatever is entered
     def setCustom(self):
         self.cmap, ok = QtGui.QInputDialog.getText(self, 'Set Cmap', 'Cmap')
         self.setCmap(self.cmap)
         
-
+    # called by menu options and setCustom, sets cmap and redraws the plot 
     def setCmap(self, cmap):
         self.cmap = cmap         
         self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
@@ -346,6 +368,7 @@ class ApplicationWindow(QtGui.QMainWindow):
     def closeEvent(self, ce):
         self.fileQuit()
         
+    # opens file, shows entire plot, sets sliders to not being able to move
     def openFile(self):
         self.path = QtGui.QFileDialog.getOpenFileName()
         
@@ -358,8 +381,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.x_sld_max = self.data_dim[0]
         self.y_sld_max = self.data_dim[1]
         
-    
-     
 
     def about(self):
         QtGui.QMessageBox.about(self, "About",
