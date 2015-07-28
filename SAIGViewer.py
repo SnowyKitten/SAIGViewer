@@ -87,8 +87,8 @@ class MyStaticMplCanvas(MyMplCanvas):
                                  aspect=aspect,
                                  interpolation=interpolation)
                 self.draw()
-                # returns the height and width of the data matrix
-                return len(d), len(d[0])
+                # returns the width and height [x,y]
+                return len(d[0]), len(d)
             
             else:
                 # plot wiggle here if desired
@@ -100,7 +100,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.path = ""
         self.old_xlim = 0
         self.old_ylim = 0
+        self.x_sld_max = 100
+        self.y_sld_max = 100
         self.data_dim = 0,0
+        self.window_dim = 0,0
         self.style = 'color' 
         self.wiggle_fill_color = 'k'
         self.wiggle_line_color = 'k'
@@ -149,10 +152,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.x_sld.valueChanged[int].connect(self.xChangeValue)   
         self.x_sld.setTickPosition(1)
         self.x_sld.setMinimum(0)
-        self.x_sld.setMaximum(100)
+        self.x_sld.setMaximum(self.x_sld_max)
         self.x_sld.setTickInterval(4)
-        self.x_sld.setRange(0,100)
-        self.x_sld.setValue(50)
+        self.x_sld.setRange(0,self.x_sld_max)
+        self.x_sld.setValue(self.x_sld_max//2)
         
         # create the y-axis pan slider
         self.y_sld = QtGui.QSlider(QtCore.Qt.Vertical, self)
@@ -160,10 +163,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.valueChanged[int].connect(self.yChangeValue)
         self.y_sld.setTickPosition(2)
         self.y_sld.setMinimum(0)
-        self.y_sld.setMaximum(100)
+        self.y_sld.setMaximum(self.y_sld_max)
         self.y_sld.setTickInterval(4)
-        self.y_sld.setRange(0,100)         
-        self.y_sld.setValue(50)   
+        self.y_sld.setRange(0,self.y_sld_max)         
+        self.y_sld.setValue(self.y_sld_max//2)   
         
         # call the default mpl toolbar
         self.mpl_toolbar = NavigationToolbar(self.sc, self.main_widget)
@@ -285,32 +288,26 @@ class ApplicationWindow(QtGui.QMainWindow):
         
         
     def zoomDialog(self):
-        text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to Xmin, Xmax, Ymin, Ymax')
+        text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to [Xmin, Xmax, Ymin, Ymax]')
         if ok:
-            try:
-                dim = text.strip().split(',')
-
-                # set slider bars to approximately the correct location given a zoom
-                self.y_sld.setValue((self.data_dim[0]//int(dim[3]))*100)
-                self.x_sld.setValue((int(dim[0])//self.data_dim[1])*100)
+            self.window_dim = text.strip().split(',')
+            self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
+            self.y_sld.setMaximum(self.data_dim[1] - (int(self.window_dim[3]) - int(self.window_dim[2])))               
+                
+            # set slider bars to approximately the correct location given a zoom            
+            self.y_sld.setValue(self.y_sld_max - int(self.window_dim[3]))
+            self.x_sld.setValue(int(self.window_dim[0]))
             
-                self.sc.axes.set_xlim(int(dim[0]), int(dim[1]))
-                self.sc.axes.set_ylim(int(dim[3]), int(dim[2]))
-                self.sc.draw()   
-            except:
-                return
-
- 
-      
+            self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
+            self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
+            self.sc.draw()   
     
     def xChangeValue(self, value):
         modifier = value - self.old_xlim
         self.old_xlim = value
         # get height and width of data matrix
-        ht, wt = self.data_dim[0], self.data_dim[1]
-        tickwt = wt/100
         old_min, old_max = self.sc.axes.get_xlim()
-        self.sc.axes.set_xlim([old_min+(tickwt*modifier),old_max+(tickwt*modifier)])
+        self.sc.axes.set_xlim([old_min+(modifier),old_max+(modifier)])
         self.sc.draw()
         
         return
@@ -319,10 +316,8 @@ class ApplicationWindow(QtGui.QMainWindow):
         modifier = value - self.old_ylim
         self.old_ylim = value
         # get height and width of data matrix
-        ht, wt = self.data_dim[0], self.data_dim[1]
-        tickht = ht/100
         old_min, old_max = self.sc.axes.get_ylim()
-        self.sc.axes.set_ylim([old_min+(-1*tickht*modifier),old_max+(-1*tickht*modifier)])
+        self.sc.axes.set_ylim([old_min+(-1*modifier),old_max+(-1*modifier)])
         self.sc.draw()        
         return    
 
@@ -331,20 +326,17 @@ class ApplicationWindow(QtGui.QMainWindow):
         key_press_handler(event, self.sc, self.mpl_toolbar)
 
 
-
-    def adopted(self):
-        print("Im adopted")
-
     def setCustom(self):
         self.cmap, ok = QtGui.QInputDialog.getText(self, 'Set Cmap', 'Cmap')
         self.setCmap(self.cmap)
         
 
     def setCmap(self, cmap):
-        self.cmap = cmap
-        self.x_sld.setValue(50)
-        self.y_sld.setValue(50)          
+        self.cmap = cmap         
         self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+        self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
+        self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
+        self.sc.draw()
                    
 
 
@@ -356,9 +348,18 @@ class ApplicationWindow(QtGui.QMainWindow):
         
     def openFile(self):
         self.path = QtGui.QFileDialog.getOpenFileName()
-        self.x_sld.setValue(50)
-        self.y_sld.setValue(50)           
+        
+        self.x_sld.setMaximum(0)        
+        self.y_sld.setMaximum(0)
+        self.x_sld.setValue(0)
+        self.y_sld.setValue(0) 
+        
         self.data_dim = self.sc.compute_figure(file_name = self.path, cmap = self.cmap)
+        self.window_dim = self.data_dim
+        self.x_sld_max = self.data_dim[0]
+        self.y_sld_max = self.data_dim[1]
+        
+    
      
 
     def about(self):
