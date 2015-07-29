@@ -313,7 +313,7 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.setValue(0)
         
         self.sc.axes.set_xlim(0, self.x_sld_max)
-        self.sc.axes.set_ylim(0, self.y_sld_max)
+        self.sc.axes.set_ylim(self.y_sld_max,0)
         self.sc.draw()
         
         return
