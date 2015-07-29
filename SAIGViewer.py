@@ -138,7 +138,15 @@ class ApplicationWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("application main window")
-
+        
+        app_icon = QtGui.QIcon()
+        app_icon.addFile('Icons/SAIG16x16.png', QtCore.QSize(16,16))
+        app_icon.addFile('Icons/SAIG24x24.png', QtCore.QSize(24,24))
+        app_icon.addFile('Icons/SAIG32x32.png', QtCore.QSize(32,32))
+        app_icon.addFile('Icons/SAIG48x48.png', QtCore.QSize(48,48))
+        app_icon.addFile('Icons/SAIG256x256.png', QtCore.QSize(256,256))        
+        self.setWindowIcon(app_icon)      
+        
         self.main_widget = QtGui.QWidget(self)
 
         # create widow layout
@@ -150,6 +158,10 @@ class ApplicationWindow(QtGui.QMainWindow):
         # create a zoom dialog button
         self.zbtn = QtGui.QPushButton('Zoom', self)
         self.zbtn.clicked.connect(self.zoomDialog)
+        
+        # create a reset button
+        self.rbtn = QtGui.QPushButton('Reset', self)
+        self.rbtn.clicked.connect(self.resetButton)
                     
         
         # create the x-axis pan slider
@@ -174,18 +186,13 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.y_sld.setRange(0,self.y_sld_max)         
         self.y_sld.setValue(self.y_sld_max//2)   
         
-        #--------------------------------------------------#
-        # call the default mpl toolbar, planning to remove #
-        #--------------------------------------------------#
-        self.mpl_toolbar = NavigationToolbar(self.sc, self.main_widget)
-        self.sc.mpl_connect('key_press_event', self.on_key_press)
 
         # add the separate widgets into the display
         l.addWidget(self.y_sld, 0, 0)
         l.addWidget(self.sc, 0, 1)
-        l.addWidget(self.x_sld, 1, 1)
-        l.addWidget(self.mpl_toolbar, 2, 1)      
+        l.addWidget(self.x_sld, 1, 1)     
         l.addWidget(self.zbtn, 2,2)
+        l.addWidget(self.rbtn, 1,2)
         
         
         # add all the menu options
@@ -296,6 +303,21 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         
         
+    # resets the display to before zooms
+    
+    def resetButton(self):
+        # set sliders to have no values again
+        self.x_sld.setMaximum(0)        
+        self.y_sld.setMaximum(0)
+        self.x_sld.setValue(0)
+        self.y_sld.setValue(0)
+        
+        self.sc.axes.set_xlim(0, self.x_sld_max)
+        self.sc.axes.set_ylim(0, self.y_sld_max)
+        self.sc.draw()
+        
+        return
+        
     # opens a dialog window where you type ints [a,b,c,d] with the commas to give
     # Xmin, Xmax, Ymin, and Ymax of the zoomed window
     def zoomDialog(self):
@@ -347,9 +369,6 @@ class ApplicationWindow(QtGui.QMainWindow):
             return
 
 
-    def on_key_press(self, event):
-        #implement something here if desired
-        key_press_handler(event, self.sc, self.mpl_toolbar)
 
     # called by the self entered cmap option, sets the cmap to whatever is entered
     def setCustom(self):
