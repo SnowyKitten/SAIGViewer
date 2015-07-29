@@ -17,9 +17,9 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import *
 
 
-progname = "SAIGViewer WIP"
+progname = "SAIGViewer V0.1"
 #os.path.basename(sys.argv[0])
-progversion = "0.01"
+progversion = "0.1"
 
 
 class MyMplCanvas(FigureCanvas):
