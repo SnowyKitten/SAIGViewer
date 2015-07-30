@@ -61,8 +61,7 @@ class DataReader():
         file_name_h = file_name[:-1] + "h"
         header_matrix = self.read_header(file_name_h)
         
-        f = open(file_name, 'rb')
-        data_long_vector = fromfile(f, dtype=float32)
+        data_long_vector = fromfile(file_name, dtype=float32)
         
         # header_matrix[-1][0] is the tracenum of the last trace
         num_traces = header_matrix[0][-1]

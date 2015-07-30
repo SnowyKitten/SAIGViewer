@@ -324,7 +324,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         
         text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to [Xmin, Xmax, Ymin, Ymax]')
         if ok:
-                text = str(text)
                 self.window_dim = text.strip().split(',')
                 # change the slider bars so that you can move the slider, but not past the edges
                 self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
