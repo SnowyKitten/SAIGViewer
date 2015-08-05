@@ -1,7 +1,7 @@
 using PySide
 using PyPlot
 using Seismic
-println("wat")
+
 
 progname = "SAIGViewer V0.1"
 file_name = "data_with_noise.seisd"
@@ -9,14 +9,31 @@ file_name = "data_with_noise.seisd"
 
 w = Qt.QWidget()        # constructors
 w[:setWindowTitle](progname) # w.setWindowTitle() is w[:setWindowTitle] in PyCall
-lyt = Qt.QGridLayout(w)
-w[:setLayout](lyt)
+l = Qt.QGridLayout(w)
+w[:setLayout](l)
+
+width = 4
+height = 4
+dpi = 100
+
+fig = figure(0,(width,height), dpi)
 
 
+ax = sc[:add_subplot](1,1,1)
+d = rand(100,100)
+ax = ax[:imshow](d)
+
+#l[:addWidget](sc,0,0)
+
+#ax[:draw]()
+#ax[:SeisPlot](rand(100,100))
+
+
+#=
 # create an initial image canvas
 sc = Qt.QWidget(w, width=100, height=100)
-
-
+l[:addWidget](sc)
+=#
 
 
 #=
