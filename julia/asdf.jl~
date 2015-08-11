@@ -1,27 +1,9 @@
-using PySide
-println("wat")
+using PyPlot
+x_entries = Float64[]
+y_entries = Float64[]
 
-w = Qt.QWidget()        # constructors
-w[:setWindowTitle]("Hello world example") # w.setWindowTitle() is w[:setWindowTitle] in PyCall
-lyt = Qt.QVBoxLayout(w)
-w[:setLayout](lyt)
+push!(x_entries, 1)
+push!(y_entries, 2)
 
-btn = Qt.QPushButton("Click me", w)
-lyt[:addWidget](btn)
-
-qconnect(btn, :clicked) do  # qconnect convenience to connect to a signal
-    msg = Qt.QMessageBox(btn)
-    msg[:setWindowTitle]("A message for you...")
-    msg[:setText]("Hello world!")
-    msg[:setInformativeText]("Thanks for clicking.")
-    msg[:setIcon](Qt.QMessageBox()[:Information])   # how to pick out Qt::QMessageBox::Information 
-
-enumeration
-  convert(Function, msg[:exec])()       # Sometimes, one must must convert to a function (or call qexec(msg))
-end
-
-raise(w)            # show and raise widget
-
-if !isinteractive()
-    wait(Condition())
-end
+println(x_entries)
+println(y_entries)
