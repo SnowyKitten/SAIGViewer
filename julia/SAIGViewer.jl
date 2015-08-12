@@ -6,7 +6,7 @@ using Seismic
 
 
 progname = "SAIGViewer V0.1"
-file_name = "data_with_noise"
+file_name = "small_stack"
 
     function ApplicationWindow(w)
 
@@ -33,8 +33,7 @@ file_name = "data_with_noise"
 
         ax = fig[:add_subplot](1,1,1)
         ax[:hold](false)
-
-        file_name = "data_with_noise"       
+      
  
         d, h, status = SeisRead(file_name)        
 
