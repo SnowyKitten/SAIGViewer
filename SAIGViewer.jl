@@ -2,6 +2,9 @@ using PyCall
 @pyimport matplotlib.backends.backend_qt4agg as qt4agg
 @pyimport PyQt4 as PyQt4
 @pyimport matplotlib.figure as mplf
+#unshift!(PyVector(pyimport("sys")["path"]), "")
+#@pyimport SAIGFunc as saigf
+
 using Seismic
 
 
@@ -9,6 +12,38 @@ progname = "SAIGViewer V0.1"
 file_name = "binary_data/data_with_noise"
 
     function ApplicationWindow(w)
+        path = ""
+        old_xlim = 0
+        old_ylim = 0
+        x_sld_max = 100
+        y_sld_max = 100
+        data_dim = 0,0
+        window_dim = 0,0
+        style = "color" 
+        wiggle_fill_color = "k"
+        wiggle_line_color = "k"
+        wiggle_trace_increment = 1
+        xcur = 1.2
+        fignum = 1
+        cmap = "RdGy"
+        vmin = -1
+        vmax = 1
+        title = " "
+        xlabel = " "
+        xunits = " "
+        ylabel = " "
+        yunits = " "
+        ox = 0
+        dx = 1
+        oy = 0
+        dy = 1
+        dpi = 100
+        wbox = 8
+        hbox = 8
+        name = None
+        interpolation = nothing 
+
+
 
         w = PyQt4.QtGui[:QMainWindow]()        # constructors
         w[:setWindowTitle](progname) # w.setWindowTitle() is w[:setWindowTitle] in PyCall
@@ -39,10 +74,30 @@ file_name = "binary_data/data_with_noise"
       
 
         zbtn = PyQt4.QtGui[:QPushButton]("Zoom")
-        function adopted(a=false)
-            println("help i'm adopted")
+        function zoomDialog(a=false)
+            tmp = PyQt4.QtGui[:QInputDialog]()
+            text, ok = tmp[:getText](w,"Zoom", "Zoom to [Xmin, Xmax, Ymin, Ymax]")
+            if ok
+                text = string(text)
+                text = text[33:end-2]
+                text = strip(text)
+                window_dim = split(text,',')
+            #=
+                # change the slider bars so that you can move the slider, but not past the edges
+                self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
+                self.y_sld.setMaximum(self.data_dim[1] - (int(self.window_dim[3]) - int(self.window_dim[2])))               
+                
+                # set slider bars to approximately the correct location given a zoom            
+                self.y_sld.setValue(self.y_sld_max - int(self.window_dim[3]))
+                self.x_sld.setValue(int(self.window_dim[0]))
+            =#
+                ax[:set_xlim](int(window_dim[1]), int(window_dim[2]))
+                ax[:set_ylim](int(window_dim[4]), int(window_dim[3]))
+                canvas[:draw]()
+
+            end
         end
-        zbtn[:clicked][:connect](adopted)
+        zbtn[:clicked][:connect](zoomDialog)
   
 
 
@@ -63,12 +118,33 @@ file_name = "binary_data/data_with_noise"
         w[:setCentralWidget](main_widget)
 
 
+
+
+
         return w
     end
 
 
 
-
+#=
+    def zoomDialog(self):
+        
+        text, ok = QtGui.QInputDialog.getText(self, 'Zoom', 'Zoom to [Xmin, Xmax, Ymin, Ymax]')
+        if ok:
+                text = str(text)
+                self.window_dim = text.strip().split(',')
+                # change the slider bars so that you can move the slider, but not past the edges
+                self.x_sld.setMaximum(self.data_dim[0] - (int(self.window_dim[1]) - int(self.window_dim[0])))        
+                self.y_sld.setMaximum(self.data_dim[1] - (int(self.window_dim[3]) - int(self.window_dim[2])))               
+                
+                # set slider bars to approximately the correct location given a zoom            
+                self.y_sld.setValue(self.y_sld_max - int(self.window_dim[3]))
+                self.x_sld.setValue(int(self.window_dim[0]))
+            
+                self.sc.axes.set_xlim(int(self.window_dim[0]), int(self.window_dim[1]))
+                self.sc.axes.set_ylim(int(self.window_dim[3]), int(self.window_dim[2]))
+                self.sc.draw()
+=#
 
 
 qApp = PyQt4.QtGui[:QApplication](ARGS)
