@@ -8,6 +8,7 @@ using PyCall
 using Seismic
 
 
+
 progname = "SAIGViewer V0.1"
 file_name = "binary_data/data_with_noise"
 
@@ -100,16 +101,100 @@ file_name = "binary_data/data_with_noise"
         zbtn[:clicked][:connect](zoomDialog)
   
 
+        function xChangeValue(value,a=false)
+            # modifier = how many ticks are moved at a time
+            modifier = (value - old_xlim)
+            old_xlim = value
+            old_min, old_max = ax[:get_xlim]()
+            # move the window accordingly
+            ax[:set_xlim]([old_min+(modifier),old_max+(modifier)])
+            canvas[:draw]()        
+        end
+        # create the x-axis pan slider
+        x_sld = PyQt4.QtGui[:QSlider]()
+        # 0x1 == Horizontal, QtCore.Qt.Horizontal
+        x_sld[:setOrientation](int(0x1))
+        # 0 == NoFocus, QtCore.Qt.NoFocus
+        x_sld[:setFocusPolicy](int(0))
+        x_sld[:setTickPosition](1)
+        x_sld[:setMinimum](0)
+        x_sld[:setMaximum](x_sld_max)
+        x_sld[:setTickInterval](4)
+        x_sld[:setRange](0,x_sld_max)
+        x_sld[:setValue](x_sld_max//2)
+        x_sld[:valueChanged][:connect](xChangeValue)   
+
+
+
+        
+        function yChangeValue(value,a=false)
+            # modifier = how many ticks are moved at a time
+            modifier = (value - old_ylim)
+            old_ylim = value
+            old_min, old_max = ax[:get_ylim]()
+             # move the window accordingly
+            ax[:set_ylim]([old_min+(modifier),old_max+(modifier)])
+            canvas[:draw]()        
+        end       
+        # create the x-axis pan slider
+        y_sld = PyQt4.QtGui[:QSlider]()
+        # 0x2 == Vertical, QtCore.Qt.Vertical
+        y_sld[:setOrientation](int(0x2))
+        # 0 == NoFocus, QtCore.Qt.NoFocus
+        y_sld[:setFocusPolicy](int(0))
+        y_sld[:setTickPosition](2)
+        y_sld[:setMinimum](0)
+        y_sld[:setMaximum](y_sld_max)
+        y_sld[:setTickInterval](4)
+        y_sld[:setRange](0,y_sld_max)
+        y_sld[:setValue](y_sld_max//2)
+        y_sld[:valueChanged][:connect](yChangeValue) 
+
+
+
+
 
         d, h, status = SeisRead(file_name)        
 
         SeisPlot(d,["canvas" => ax, "style" => "wiggles"])
 
-        #l[:addWidget](y_sld, 0, 0)
+        l[:addWidget](y_sld, 0, 0)
         l[:addWidget](canvas, 0, 1)
-        #l[:addWidget](x_sld, 1, 1)
+        l[:addWidget](x_sld, 1, 1)
         l[:addWidget](zbtn, 2, 2)
         #l[:addWidget](rbtn, 1, 2)
+
+
+
+        function openFile()
+            return
+        end
+        function about()
+            tmp = PyQt4.QtGui[:QMessageBox]()
+
+            tmp[:about](w, "About",
+            """
+            Simple Plot Viewer built for SAIG (Signal Analysis and Imaging Group) at the University of Alberta
+            """
+            )
+        end
+        function fileQuit()
+            return
+        end
+
+        # add all the menu options
+        file_menu = PyQt4.QtGui[:QMenu]("&File", w)
+        # again, values must be used because passing parameters by name betweens enums and 3 languages is hard
+        # 0x04000000 == Qt.ControlModifier 0x4f == Qt.Key_O
+        file_menu[:addAction]("&Open File...", openFile, int(0x04000000) + int(0x4f))
+        # 0x41 == Qt.Key_A
+        file_menu[:addAction]("&About", about, int(0x04000000) + int(0x41))     
+        # 0x51 == Qt.Key_Q
+        file_menu[:addAction]("&Quit", fileQuit, int(0x04000000) + int(0x51))
+        
+        w[:menuBar]()[:addMenu](file_menu)
+
+
 
 
 
