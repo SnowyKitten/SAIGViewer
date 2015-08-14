@@ -38,9 +38,12 @@ file_name = "binary_data/data_with_noise"
         ax[:hold](false)
       
 
-        zbtn = PyQt4.QtGui[:QPushButton]("Zoom", w)
-        zbtnc = zbtn[:clicked]
-        zbtnc[:connect](adopted())
+        zbtn = PyQt4.QtGui[:QPushButton]("Zoom")
+        function adopted(a=false)
+            println("help i'm adopted")
+        end
+        zbtn[:clicked][:connect](adopted)
+  
 
 
         d, h, status = SeisRead(file_name)        
@@ -63,9 +66,7 @@ file_name = "binary_data/data_with_noise"
         return w
     end
 
-    function adopted()
-        println("help i'm adopted")
-    end
+
 
 
 
@@ -84,4 +85,3 @@ aw[:show]()
 if !isinteractive()
     wait(Condition())
 end
-
