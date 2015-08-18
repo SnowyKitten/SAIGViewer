@@ -4,8 +4,6 @@ using PyCall
 @pyimport matplotlib.figure as mplf
 using Seismic
 
-
-
 progname = "SAIGViewer V0.1"
 
     function ApplicationWindow(w)
@@ -109,7 +107,8 @@ progname = "SAIGViewer V0.1"
             w[:close]()
         end
 
-        function closeEvent()
+        # naturally gets called when window is closed for whatever reason
+        function closeEvent(w, ce):
             fileQuit()
         end
 
@@ -517,10 +516,6 @@ progname = "SAIGViewer V0.1"
         l[:addWidget](zbtn, 2, 2)
         l[:addWidget](rbtn, 1, 2)
 
-
-
-
-
         # add all the menu options
         file_menu = PyQt4.QtGui[:QMenu]("&File", w)
         # again, values must be used because passing parameters by name betweens enums and 3 languages is hard
@@ -535,9 +530,7 @@ progname = "SAIGViewer V0.1"
         style_menu[:addAction]("&Colour Plot", colourPlot)
         style_menu[:addAction]("&Wiggle Plot", wigglePlot)
 
-
-        colour_menu = PyQt4.QtGui[:QMenu]("&Colour Map", w)
-        
+        colour_menu = PyQt4.QtGui[:QMenu]("&Colour Map", w)    
         seqcmap_menu = PyQt4.QtGui[:QMenu]("&Sequential", w)
         seqcmap2_menu = PyQt4.QtGui[:QMenu]("&Sequential (2)", w)
         divcmap_menu = PyQt4.QtGui[:QMenu]("&Diverging", w)
@@ -619,25 +612,19 @@ progname = "SAIGViewer V0.1"
         misccmap_menu[:addAction]("&gist_rainbow", setgist_rainbow)
         misccmap_menu[:addAction]("&hsv", sethsv)
         misccmap_menu[:addAction]("&flag", setflag)
-        misccmap_menu[:addAction]("&prism", setprism)
-        
+        misccmap_menu[:addAction]("&prism", setprism)   
 
         colour_menu[:addAction]("&Enter a cmap" , setCustom)
-        
-
 
         w[:menuBar]()[:addMenu](file_menu)
         w[:menuBar]()[:addMenu](colour_menu)
         w[:menuBar]()[:addMenu](style_menu)
-
 
         main_widget[:setFocus]()
         w[:setCentralWidget](main_widget)
 
         return w
     end
-
-
 
 qApp = PyQt4.QtGui[:QApplication](ARGS)
 window = PyQt4.QtGui[:QMainWindow]()
@@ -647,9 +634,5 @@ aw = ApplicationWindow(window)
 aw[:setWindowTitle](progname)
 aw[:show]()
 
+qApp[:exec_]()
 
-
-
-if !isinteractive()
-    wait(Condition())
-end
