@@ -1,0 +1,96 @@
+Julia Porting Issues
+
+The following is simply issues I ran into while working with Julia in creating a GUI, 
+and hopefully this can help anyone who has to read, modify, or add to SAIGViewer.jl
+to avoid the same pitfalls that wasted so much of my time. I'll simply be going from
+top to bottom of the code reading and recalling issues I had at each step, so ordering
+will simmply be in this top down order as well.
+
+Julia Reminders
+----------------------------------------------------------------------------------------
+-INDEX FROM 1 NOT 0
+-pymodule[:function](parameters) to call python functions
+-pymodule[:field] will return a field 
+-careful of the above two, as you may actually be calling on C code instead of python
+ in which case it will error in a non-descriptive manner
+-if porting from python where '' and "" both work as string represenation, julia can only
+ use ""
+ 
+
+
+From SAIGViewer.jl
+----------------------------------------------------------------------------------------
+1)  When defining functions for use within the GUI, to be called by [:clicked][:connect]
+    elements such as buttons, sliders, and other interactive parts of the GUI, you MUST
+    add a=false into the arguments in order for it to properly register and connect to
+    the GUI element. ex) function resetButton(a=false) ... end must have a=false or it
+    will error
+
+2)  When calling methods that are subclasses of others from python, you must 
+    individually instantiate and call on each. The following is an example:
+
+        tmp = PyQt4.QtGui[:QInputDialog]()
+        text, ok = tmp[:getText](w,"Zoom", "Zoom to [Xmin, Xmax, Ymin, Ymax]")
+
+    PyQt4 is the module import from julia, QtGui is a python module we call from PyQt4
+    QInput Dialog is a class that is called from the QtGui module, with a method 
+    [:getText] we must however separately instantiate the QInputdialog before calling,
+    when in python we can simply go QtGui.QInputDialog.getText() as the dot operator
+    in python automatically instantiates and sets each object recursively
+
+3)  When using qt, creating a Dialoag makes a pop up window for the user to input data,
+    this input is returned as a Qstring, which if you call str(Qstring) in python will 
+    simply convert the string for you. However in Julia you must call string(Qstring) 
+    and then splice it. The string conversion in Julia turns a lot of extra Qstring 
+    information into part of the string, and so you must splice the string to be 
+    text = text[33:end-2] as the first 33 elements are not part of the user input, 
+    and neither are the last two
+
+4)  Functions can be passed as objects themselves, and this is commonly used in GUIs
+    It is however as of right now, not possible to pass arguments within the function
+    while passing the function as an object, as this will simply cause the function to 
+    be called. In Python this can be dealt with using lambda: f(x) and f will still be
+    passed as a function, but with x as data. This could be worked around if you were 
+    passing a function into your own function, but the [:addAction] function that binds
+    functions and menu options does not work in this way. To this end, in Julia I have 
+    had to write a many repeating small unique function calls for each cmap option.
+    If julia includes passing functions with parameters in the future, they can all be
+    removed and the functions in the addAction functions changed to simply setCmap(cmap)
+
+5)  Some of the Qt library runs off of parts of C built libraries. The ones relevant to
+    us are just names and labels. In Python or C you can pass Qt.Key_O and the struct
+    will automatically replace your keyword with the correct value. This struct cannot
+    be accessed from Julia properly though, and so we must find and manually use the value.
+    In my experiences so far this can be easily searched when looking up the namespace,
+    for example we replace Qt.Key_O with int(0x4f) and the program runs as expected.
+    Remember to comment so that people know what it represents.
+
+
+ From SeisPlot.jl
+ ----------------------------------------------------------------------------------------
+
+6)  Creating the wiggle plot was an immense struggle due to what I now understand as large
+    differences between matplotlib, the backend plotting module, and the translated PyPlot
+    module. It is key to realize that PyPlot is designed to be basic, easy to use, easy to 
+    plot. It however cannot be used to generate pieces of what we need in order to place it
+    inside a GUI. To this end we must use matplotlib directly to get what we need. When it 
+    comes to the [:imshow] function that is used for the colour plot, there exists no problem.
+    When using the [:plot] function like for the wiggle plot though, we have some key 
+    differences:
+
+    a) When looping and plotting using PyPlot, [:plot] will add the new lines to the existing
+       plot, while [:plot] in matplotlib will overwrite the entire plot with only what is 
+       currently passed to it. 
+
+    b) This results in a need to pass all the data simulataneously, but it should be noted 
+       that [:plot] will create a continuous line between data points, making a plot that is
+       simply plotted with all the data passed at once incorrect. 
+
+    What this forces us to do is go down another object level, and instead of interacting with
+    the axes object, and using [:plot] we need to create individal line objects and add them to
+    the axes. This is relatively simple and can be iterated over, adding lines to the axes, but 
+    we must remember to manually add vertical lines as well as the lines of the wiggle. 
+
+    Filling is relatively simple, though it did waste time originially because I did not notice
+    that the graph itself was slightly off when trying to pass all parameters to the [:plot] 
+    function.
