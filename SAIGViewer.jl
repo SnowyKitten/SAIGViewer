@@ -3,7 +3,11 @@ using PyCall
 @pyimport PyQt4 as PyQt4
 @pyimport matplotlib.figure as mplf
 using Seismic
-unshift!(PyVector(pyimport("sys")["path"]), "")
+# by default julia does not try to import from current directory, but using the line below makes
+# it so that it will look starting from current directory
+# not currently used, but may be needed if we want to write our own python modules for use
+# in the future
+#unshift!(PyVector(pyimport("sys")["path"]), "")
 
 progname = "SAIGViewer V0.1"
 
@@ -138,14 +142,12 @@ progname = "SAIGViewer V0.1"
 
         function fkPlot()
             ax[:clear]()
-            #SeisPlotFKSpectrum(data, ["canvas" => ax])
             style = "fk"
             resetButton()
         end
 
         function ampPlot()
             ax[:clear]()
-            #SeisPlotAmplitudeSpectrum(data, ["canvas" => ax])
             style = "amp"
             resetButton()
         end
@@ -163,10 +165,9 @@ progname = "SAIGViewer V0.1"
         # called by menu options and setCustom, sets cmap and redraws the plot 
         function setCmap(cmap)
             try
+                style = "color"
                 SeisPlot(data, ["canvas" => ax, "cmap" => cmap])
-                ax[:set_xlim](int(window_dim[1]), int(window_dim[2])-1)
-                ax[:set_ylim](int(window_dim[4])-1, int(window_dim[3]))
-                canvas[:draw]()
+                resetButton()
             catch e
                 return
             end
@@ -649,10 +650,7 @@ progname = "SAIGViewer V0.1"
         w[:menuBar]()[:addMenu](file_menu)
         w[:menuBar]()[:addMenu](colour_menu)
         w[:menuBar]()[:addMenu](style_menu)
-
-        #cid = canvas[:mpl_connect]("button_press_event", asdf.imadopted)
         
-
         main_widget[:setFocus]()
         w[:setCentralWidget](main_widget)
 
