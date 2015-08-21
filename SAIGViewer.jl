@@ -3,6 +3,7 @@ using PyCall
 @pyimport PyQt4 as PyQt4
 @pyimport matplotlib.figure as mplf
 using Seismic
+unshift!(PyVector(pyimport("sys")["path"]), "")
 
 progname = "SAIGViewer V0.1"
 
@@ -16,8 +17,17 @@ progname = "SAIGViewer V0.1"
             x_sld[:setValue](0)
             y_sld[:setValue](0)
         
-            ax[:set_xlim](0, x_sld_max-1)
-            ax[:set_ylim](y_sld_max-1,0)
+            if (style == "color" )
+                ax[:set_xlim](0, x_sld_max-1)
+                ax[:set_ylim](y_sld_max-1,0)
+            elseif (style == "wiggles")
+                ax[:set_xlim](0, x_sld_max-1)
+                ax[:set_ylim](y_sld_max-1,0)
+            elseif (style == "fk")
+                SeisPlotFKSpectrum(data, ["canvas" => ax])
+            elseif (style == "amp")
+                SeisPlotAmplitudeSpectrum(data, ["canvas" => ax])
+            end
             canvas[:draw]()   
         end
 
@@ -113,15 +123,33 @@ progname = "SAIGViewer V0.1"
         end
 
         function colourPlot()
+            ax[:clear]()
             SeisPlot(data, ["canvas" => ax, "cmap" => cmap])
+            style = "color"
             resetButton()
         end
 
         function wigglePlot()
             ax[:clear]()
             SeisPlot(data, ["canvas" => ax, "style" => "wiggles"])
+            style = "wiggles"
             resetButton()
         end
+
+        function fkPlot()
+            ax[:clear]()
+            #SeisPlotFKSpectrum(data, ["canvas" => ax])
+            style = "fk"
+            resetButton()
+        end
+
+        function ampPlot()
+            ax[:clear]()
+            #SeisPlotAmplitudeSpectrum(data, ["canvas" => ax])
+            style = "amp"
+            resetButton()
+        end
+
 
         # called by the self entered cmap option, sets the cmap to whatever is entered
         function setCustom()
@@ -408,7 +436,6 @@ progname = "SAIGViewer V0.1"
             setCmap("prism")
         end
 
-
         data = []
         path = ""
         old_xlim = 0
@@ -443,7 +470,7 @@ progname = "SAIGViewer V0.1"
 
 
 
-        w = PyQt4.QtGui[:QMainWindow]()        # constructors
+        w = PyQt4.QtGui[:QMainWindow]() # constructors
         w[:setWindowTitle](progname) # w.setWindowTitle() is w[:setWindowTitle] in PyCall
           
         main_widget = PyQt4.QtGui[:QWidget](w)
@@ -529,6 +556,9 @@ progname = "SAIGViewer V0.1"
         style_menu = PyQt4.QtGui[:QMenu]("&Plot Style", w)
         style_menu[:addAction]("&Colour Plot", colourPlot)
         style_menu[:addAction]("&Wiggle Plot", wigglePlot)
+        style_menu[:addAction]("&FK Spectrum Plot", fkPlot)
+        style_menu[:addAction]("&Amplitude Spectrum Plot", ampPlot)
+
 
         colour_menu = PyQt4.QtGui[:QMenu]("&Colour Map", w)    
         seqcmap_menu = PyQt4.QtGui[:QMenu]("&Sequential", w)
@@ -619,6 +649,9 @@ progname = "SAIGViewer V0.1"
         w[:menuBar]()[:addMenu](file_menu)
         w[:menuBar]()[:addMenu](colour_menu)
         w[:menuBar]()[:addMenu](style_menu)
+
+        #cid = canvas[:mpl_connect]("button_press_event", asdf.imadopted)
+        
 
         main_widget[:setFocus]()
         w[:setCentralWidget](main_widget)

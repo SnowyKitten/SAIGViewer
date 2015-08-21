@@ -65,6 +65,14 @@ From SAIGViewer.jl
     for example we replace Qt.Key_O with int(0x4f) and the program runs as expected.
     Remember to comment so that people know what it represents.
 
+6)  Currently adding clickable plots is not possible within the Julia and Qt framework.
+    https://github.com/stevengj/PyCall.jl/issues/158 must be solved in order for this to
+    be do-able. In short, Julia wraps it's functions and passes it to Python in PyCall,
+    but the needed wrapping is not created yet.
+
+    Here is the page if this issue is resolved in the future:
+    http://matplotlib.org/users/event_handling.html
+
 
  From SeisPlot.jl
  ----------------------------------------------------------------------------------------
